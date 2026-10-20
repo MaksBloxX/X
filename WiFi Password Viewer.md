@@ -1,103 +1,147 @@
 # Windows Wi-Fi Profiles & Saved Passwords
 
-A simple guide to viewing saved Wi-Fi profiles and checking the saved
+A simple guide to viewing saved Wi-Fi profiles and retrieving the saved
 password on **your own Windows computer** using Command Prompt (CMD).
 
-> **Use responsibly:** These commands can reveal saved Wi-Fi passwords.
+> **⚠️ Use responsibly:** These commands can reveal saved Wi-Fi passwords.
 > Use them only on your own computer or a device you are authorized to
-> manage.
+> manage. Do not share or publish retrieved passwords.
+
+---
+
+
 
 ## 1. Open Command Prompt
 
-1.  Press **Win + R**.
-2.  Type `cmd`.
-3.  Press **Enter**.
+1. Press **Win + R**.
+2. Type `cmd`.
+3. Press **Enter**.
 
-## 2. List saved Wi-Fi profiles
+> 💡 **Tip:** For best results, run as **Administrator**:
+> Search **"cmd"** in the Start Menu → Right-click → **Run as administrator**.
 
-``` cmd
+---
+
+## 2. List Saved Wi-Fi Profiles
+
+```cmd
 netsh wlan show profiles
 ```
 
-This displays the Wi-Fi network profiles saved on the computer.
+This displays all Wi-Fi network profiles previously saved on the computer.
 
-## 3. View one profile's details and saved password
+**Example output:**
 
-Replace `YOUR_WIFI_NAME` with the exact profile name shown in the
-previous command:
+```
+User profiles
+-------------
+    All User Profile     : EBAUB_WiFi
+    All User Profile     : Home_Network
+    All User Profile     : Office 5G
+```
 
-``` cmd
+---
+
+## 3. View a Profile's Password
+
+Replace `YOUR_WIFI_NAME` with the exact profile name from the previous step:
+
+```cmd
 netsh wlan show profile name="YOUR_WIFI_NAME" key=clear
 ```
 
-Look for a line similar to:
+Scroll down to the **Security settings** section and look for:
 
-``` text
+```
 Key Content            : your_saved_password
 ```
 
-If **Key Content** is not shown, Windows may not have a retrievable
-saved password for that profile, or the profile/security setup may not
-expose one.
+> If **Key Content** is not shown, Windows may not have a retrievable
+> saved password for that profile, or the security setup may not expose one.
 
 ### Example
 
-If the profile name is `EBAUB_WiFi`, run:
+If the profile name is `EBAUB_WiFi`:
 
-``` cmd
+```cmd
 netsh wlan show profile name="EBAUB_WiFi" key=clear
 ```
 
-Keep the quotation marks if the Wi-Fi profile name contains spaces.
+> ⚠️ Keep the **quotation marks** if the profile name contains spaces:
+> ```cmd
+> netsh wlan show profile name="Office 5G" key=clear
+> ```
 
-## 4. Command reference
+---
 
-  -----------------------------------------------------------------------------------------------
-  Command                                                     Purpose
-  ----------------------------------------------------------- -----------------------------------
-  `netsh wlan show profiles`                                  Lists saved Wi-Fi profiles
+## 4. Command Reference
 
-  `netsh wlan show profile name="YOUR_WIFI_NAME"`             Shows details for one profile
+| Command | Purpose |
+|---------|---------|
+| `netsh wlan show profiles` | Lists all saved Wi-Fi profiles |
+| `netsh wlan show profile name="NAME"` | Shows details for one profile |
+| `netsh wlan show profile name="NAME" key=clear` | Shows details **and** the saved password |
+| `netsh wlan show interfaces` | Shows currently connected Wi-Fi info |
+| `netsh wlan delete profile name="NAME"` | Deletes a saved profile |
 
-  `netsh wlan show profile name="YOUR_WIFI_NAME" key=clear`   Shows profile details and, when
-                                                              available, the saved key in
-                                                              readable form
-  -----------------------------------------------------------------------------------------------
+---
 
-## 5. About the `for /f` command
+## 5. View All Passwords at Once (Advanced)
 
-This one-line loop is sensitive to Windows' output format and language,
-so it may fail to extract profile names correctly:
+This one-liner loops through all profiles and extracts passwords:
 
-``` cmd
+```cmd
 for /f "skip=9 tokens=1,2 delims=:" %i in ('netsh wlan show profile') do @echo %j | findstr -i -v echo | netsh wlan show profile %j key=clear | findstr /c:"Profile" /c:"Key Content"
 ```
 
-For beginners, the recommended method is to run
-`netsh wlan show profiles`, then check one profile using Section 3. It
-is easier to understand and troubleshoot.
+> ⚠️ **Important caveats:**
+> - This command is **sensitive to Windows display language and version**.
+>   It may fail to extract profile names correctly on non-English systems.
+> - For beginners, the recommended method is to use **Sections 2 and 3**
+>   one profile at a time. It is easier to understand and troubleshoot.
+> - If you put this loop in a **`.bat` file**, use `%%i` and `%%j`
+>   instead of `%i` and `%j`. In an interactive CMD window, use single
+>   percent signs.
 
-If you put a `for /f` loop in a **`.bat` file**, use `%%i` and `%%j`
-instead of `%i` and `%j`. In an interactive CMD window, use single
-percent signs.
+---
 
-## 6. Troubleshooting
+## 6. Delete Old Profiles
 
--   **"There is no wireless interface on the system"**: Check that the
-    Wi-Fi adapter is enabled and available.
--   **Profile not found**: Copy the profile name exactly from
-    `netsh wlan show profiles`.
--   **No "Key Content" line**: The saved key may not be available for
-    that profile.
--   **Command output differs**: Windows display language and version can
-    change the wording or layout.
+Remove saved networks you no longer use to keep your credentials safe:
 
-## Quick reference
+```cmd
+netsh wlan delete profile name="Old_WiFi_Name"
+```
 
-``` cmd
+To delete **all** saved profiles at once:
+
+```cmd
+netsh wlan delete profile name=*
+```
+
+> ⚠️ This will remove all saved Wi-Fi passwords. You will need to
+> reconnect and re-enter passwords for any networks you use.
+
+---
+
+## 7. Troubleshooting
+
+| Problem | Solution |
+|---------|----------|
+| **"There is no wireless interface on the system"** | Ensure your Wi-Fi adapter is enabled. Check **Settings → Network & Internet → Wi-Fi**. |
+| **Profile not found** | Copy the profile name **exactly** from `netsh wlan show profiles`, including spaces and capitalization. |
+| **No "Key Content" line** | The network may be open (no password), or the saved key may not be retrievable for that profile type. |
+| **Command output looks different** | Windows display language and version can change the wording and layout of the output. |
+| **Access Denied errors** | Run CMD as **Administrator** (right-click → Run as administrator). |
+
+---
+
+## Quick Reference
+
+```cmd
 netsh wlan show profiles
 netsh wlan show profile name="YOUR_WIFI_NAME" key=clear
 ```
 
-**Tip:** Treat any displayed Wi-Fi password as private. Do not publish
-it in screenshots, logs, or repositories.
+> 🔒 **Privacy reminder:** Treat any displayed Wi-Fi password as private.
+> Do not publish it in screenshots, logs, or public repositories.
